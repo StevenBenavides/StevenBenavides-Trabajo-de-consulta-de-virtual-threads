@@ -207,6 +207,7 @@ return internalLinks;
 }" 
 a este código que te proporciono quiero que le implementes lo antes mencionado y como resultado quiero que me des 3 versiones del código en el que implementes los hilos virtuales también quiero que comentes las lineas en las que se hizo la implementación y dame una explicación porque lo implementaste de esa manera.
 
+### Programa final con implementacion de Virtual Threads
 ``` Java 
 package ec.edu.utpl.carreras.computacion.pga.clases.s1;
 
@@ -268,54 +269,61 @@ public class UrlAnalyzerApp {
     }
 }
 ```
-
+### Programa con Traditional Threads 
 ``` Java
 package ec.edu.utpl.carreras.computacion.pga.clases.s1;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+public class UrlAnalyzerApp {
+    public static void main(String[] args) {
+        String inputPath = "data/urls_parcial1.txt";
+        String outputPath = "data/resultados.csv";
 
-import java.net.URL;
-
-public class UrlAnalyzer implements Runnable {
-    private final String url;
-    private int internalLinks = 0;
-
-    public UrlAnalyzer(String url) {
-        this.url = url;
-    }
-
-    @Override
-    public void run() {
-        try {
-            Document doc = Jsoup.connect(url).get();
-            URL base = new URL(url);
-            String host = base.getHost();
-
-            Elements links = doc.select("a[href]");
-            for (Element link : links) {
-                String absHref = link.absUrl("href");
-                if (!absHref.isEmpty()) {
-                    URL linkUrl = new URL(absHref);
-                    if (linkUrl.getHost().equalsIgnoreCase(host)) {
-                        internalLinks++;
-                    }
-                }
+        List<String> urls = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputPath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                urls.add(line.trim());
             }
-
-        } catch (Exception e) {
-            System.out.println("Error procesando " + url + ": " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Error leyendo archivo: " + e.getMessage());
+            return;
         }
-    }
 
-    public String getUrl() {
-        return url;
-    }
+        List<UrlAnalyzer> analyzers = new ArrayList<>();
+        List<Thread> threads = new ArrayList<>();
 
-    public int getInternalLinks() {
-        return internalLinks;
+        //este bloque de codigo se le modifica para convertir a virtual threads solo el bloque del for
+        for (String url : urls) {
+            UrlAnalyzer analyzer = new UrlAnalyzer(url);
+            Thread t = new Thread(analyzer);
+            threads.add(t);
+            analyzers.add(analyzer);
+            t.start();
+        }
+
+        // Esperar a que todos los hilos terminen esta funcion se mantiene igual su funcionamiento 
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                System.out.println("Hilo interrumpido: " + e.getMessage());
+            }
+        }
+
+        // Escribir archivo CSV
+        try (PrintWriter writer = new PrintWriter(new FileWriter(outputPath))) {
+            writer.println("URL,NumURLsInternas");
+            for (UrlAnalyzer analyzer : analyzers) {
+                writer.printf("%s,%d%n", analyzer.getUrl(), analyzer.getInternalLinks());
+            }
+        } catch (IOException e) {
+            System.out.println("Error escribiendo archivo: " + e.getMessage());
+        }
+
+        System.out.println("Proceso terminado. Revisa el archivo: " + outputPath);
     }
 }
 ```
