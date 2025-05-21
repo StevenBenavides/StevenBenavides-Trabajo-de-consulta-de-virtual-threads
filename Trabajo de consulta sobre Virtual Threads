@@ -1,0 +1,66 @@
+# Java Virtual Threads
+Introducción a los Virtual Threads en Java
+Este trabajo de consulta tiene como objetivo general explorar y profundizar el modelo de virtual threads introducido en Java, comprendiendo su arquitectura, beneficios, limitaciones y reflexionando su evolución futura.
+
+1. ¿Qué son los Virtual Threads?
+Imagina que quieres realizar muchas tareas al mismo tiempo en un programa Java. Tradicionalmente, Java usa "hilos" (threads) para esto. Piensa en cada hilo como un obrero que realiza una tarea. Los "hilos tradicionales" son como obreros que necesitan muchos recursos (espacio en la memoria y atención del sistema operativo). Esto significa que solo puedes tener un número limitado de obreros (10,000 hilos tradicionales gestionados por el OS) antes de que tu programa se vuelva lento o se quede sin recursos.
+
+Los "Virtual Threads" son una nueva forma de manejar estas tareas. Son como "obreros muy ligeros" que casi no necesitan recursos (Low MB). Esto permite que puedas tener muchísimos más obreros sin que tu programa se ralentice. La idea principal es que los Virtual Threads permiten una gran escalabilidad, lo que significa que tu programa puede manejar muchas más tareas concurrentemente.
+
+2. Conceptos Fundamentales:
+El trabajo escrito debe incluir una explicación general de los virtual threads, los conceptos fundamentales de la propuesta, tales como: Carrier threads vs virtual threads, bloque y escalabilidad, cambios o extensiones para crear y gestionar virtual threads y una breve mención al concepto structured concurrency.
+
+Carrier Threads vs. Virtual Threads:
+
+Carrier Threads (Hilos Portadores): Piensa en estos como los "obreros pesados" o "máquinas" que el sistema operativo (OS) conoce y gestiona directamente. Son pocos en número y son los que realmente ejecutan el trabajo. Un Carrier Thread puede ejecutar muchos Virtual Threads.
+Virtual Threads (Hilos Virtuales): Estos son los "obreros ligeros" que mencionamos. No son gestionados directamente por el sistema operativo. En su lugar, son "montados" por los Carrier Threads. Un solo Carrier Thread puede ejecutar muchos Virtual Threads, cambiando rápidamente entre ellos cuando un Virtual Thread necesita esperar algo (como una respuesta de la red). Esto es clave para su eficiencia: cuando un Virtual Thread se bloquea (espera), el Carrier Thread puede pasar a ejecutar otro Virtual Thread en lugar de quedarse inactivo.
+Bloqueo y Escalabilidad:
+
+Bloqueo: En la programación, "bloqueo" significa que un hilo se detiene y espera a que algo suceda (por ejemplo, que lleguen datos de una base de datos o de internet). Con los hilos tradicionales, si un hilo se bloquea, el recurso que estaba usando (el obrero pesado) se queda inactivo hasta que el bloqueo se resuelve.
+Escalabilidad: Con los Virtual Threads, cuando uno se bloquea, el Carrier Thread que lo estaba ejecutando puede "desmontarlo" y empezar a ejecutar otro Virtual Thread que sí tenga trabajo que hacer. Esto permite que el mismo número de Carrier Threads pueda manejar muchísimos más Virtual Threads, lo que hace que tu aplicación sea mucho más escalable, es decir, puede manejar un mayor número de tareas concurrentes de forma eficiente.
+Cambios o Extensiones para Crear y Gestionar Virtual Threads:
+
+Java ha simplificado mucho la creación de Virtual Threads. La idea es que puedas crear y manejar Virtual Threads de una manera muy similar a como lo harías con los hilos tradicionales, pero con la ventaja de que son mucho más ligeros. Esto facilita a los desarrolladores la adopción de los Virtual Threads sin tener que reescribir gran parte de su código.
+Structured Concurrency (Concurrencia Estructurada):
+
+Este es un concepto que busca hacer el manejo de tareas concurrentes más fácil y menos propenso a errores. Imagina que tienes una tarea grande que se divide en varias subtareas. Con la concurrencia estructurada, puedes agrupar estas subtareas de tal manera que si una falla, o si la tarea principal se cancela, todas las subtareas relacionadas se manejen de forma coherente. Esto ayuda a evitar problemas como la fuga de recursos y hace que el código concurrente sea más fácil de entender y depurar. Los Virtual Threads se integran muy bien con este concepto para mejorar aún más la gestión de la concurrencia.
+3. Análisis de Ventajas y Desventajas:
+También es necesario incluir un análisis de las ventajas y desventajas de la propuesta.
+
+Ventajas:
+
+Mayor Escalabilidad: Puedes tener muchísimos más hilos sin que tu programa se ralentice, lo que es ideal para aplicaciones que necesitan manejar muchas conexiones o solicitudes al mismo tiempo (como servidores web).
+Menor Consumo de Recursos: Los Virtual Threads usan muy poca memoria, lo que los hace mucho más eficientes que los hilos tradicionales.
+Simplificación del Código Concurrente: El modelo de programación con Virtual Threads sigue siendo muy parecido al de los hilos tradicionales, lo que facilita la migración y el aprendizaje para los desarrolladores de Java.
+Mejor Rendimiento en Operaciones Bloqueantes: Son ideales para tareas que implican mucha espera (como llamadas a bases de datos, APIs externas o redes) porque el Carrier Thread puede cambiar a otro Virtual Thread mientras uno espera.
+Desventajas:
+
+No Reemplazan Hilos Tradicionales para Tareas Intensivas en CPU: Si tu tarea es pura computación y no implica esperas, los Virtual Threads no ofrecerán una ventaja significativa sobre los hilos tradicionales, ya que el cuello de botella sería el procesador, no los recursos del hilo.
+Debugging Potencialmente Más Complejo: Aunque Java está trabajando en herramientas, depurar un programa con miles de Virtual Threads podría ser más complicado en escenarios complejos.
+Curva de Aprendizaje para Conceptos Avanzados: Si bien la creación básica es sencilla, entender completamente cómo optimizar y depurar aplicaciones con Virtual Threads y structured concurrency puede requerir un poco de aprendizaje adicional.
+4. Escenarios Ideales para el Uso de Virtual Threads:
+También es necesario incluir escenarios ideales para el uso de esta propuesta.
+
+Los Virtual Threads son perfectos para aplicaciones que manejan una gran cantidad de operaciones de entrada/salida (I/O) y que suelen bloquearse mientras esperan respuestas. Algunos ejemplos incluyen:
+
+Servidores Web y APIs REST: Para manejar miles o millones de solicitudes simultáneas de clientes, donde cada solicitud puede implicar esperar una base de datos o un servicio externo.
+Aplicaciones de Microservicios: Donde los servicios se comunican entre sí a través de la red, y estas llamadas pueden ser bloqueantes.
+Procesamiento de Mensajes Asíncronos: Aplicaciones que leen y escriben en colas de mensajes, donde las operaciones de E/S son frecuentes.
+Aplicaciones con Mucha Conectividad a Bases de Datos: Donde las consultas a la base de datos son operaciones de bloqueo.
+5. Otros Lenguajes de Programación con Ideas Similares:
+También es necesario incluir otros lenguajes de programación que implementen ideas similares.
+
+Java no es el primer lenguaje en implementar este concepto de hilos ligeros o "fibras" (fibers) que son gestionados por un runtime en lugar del sistema operativo. Algunos ejemplos notables incluyen:
+
+Go (Goroutines): Go es famoso por sus "goroutines", que son hilos muy ligeros gestionados por el propio runtime de Go. Funcionan de manera similar a los Virtual Threads en el sentido de que son muy baratos de crear y son multiplexados sobre un número menor de hilos del sistema operativo.
+C# (.NET - async/await): Aunque no son "hilos" en el mismo sentido, el modelo async/await de C# permite escribir código asíncrono que se parece al código síncrono. El runtime de .NET gestiona el cambio de contexto de forma eficiente, permitiendo que las tareas bloqueantes no bloqueen un hilo del sistema operativo.
+Kotlin (Coroutines): Kotlin, que se ejecuta sobre la JVM, también tiene "coroutines" que ofrecen una forma ligera y eficiente de manejar la concurrencia, similar en espíritu a las goroutines de Go.
+Erlang (Procesos Ligeros): Erlang es conocido por su modelo de concurrencia basado en "procesos" muy ligeros y aislados, que se comunican a través de paso de mensajes. Estos procesos son gestionados por la máquina virtual de Erlang y son extremadamente eficientes para construir sistemas concurrentes y tolerantes a fallos.
+6. Opinión Personal sobre el Futuro de la Propuesta:
+Finalmente, es necesario incluir una opinión personal sobre el futuro de la propuesta.
+
+En mi opinión, los Virtual Threads son un cambio muy significativo y positivo para el ecosistema Java. Tienen el potencial de simplificar enormemente el desarrollo de aplicaciones concurrentes y de alto rendimiento. Anteriormente, para lograr alta escalabilidad, los desarrolladores de Java a menudo tenían que recurrir a frameworks complejos que usaban modelos de programación reactiva o asíncrona, que pueden ser difíciles de entender y depurar.
+
+Con los Virtual Threads, Java permite a los desarrolladores escribir código concurrente de una manera más tradicional y secuencial, pero con los beneficios de escalabilidad de los modelos asíncronos. Esto democratizará la capacidad de construir sistemas de alto rendimiento y facilitará a muchos desarrolladores la creación de aplicaciones más eficientes sin una curva de aprendizaje pronunciada.
+
+Creo que veremos una rápida adopción de los Virtual Threads, especialmente en servidores web, microservicios y cualquier aplicación que dependa en gran medida de operaciones de E/S. También es probable que muchos frameworks populares de Java (como Spring) integren los Virtual Threads para ofrecer un rendimiento y una escalabilidad mejorados de forma transparente para el desarrollador. En resumen, los Virtual Threads posicionan a Java para seguir siendo un lenguaje de elección para el desarrollo de sistemas distribuidos y de alta concurrencia en el futuro.
